@@ -1,0 +1,14 @@
+# .gitignore
+
+# Environnements virtuels
+venv/
+myenvf/
+__pycache__/
+
+# Fichiers de configuration
+*.env
+*.pyc
+.DS_Store
+
+# Dépendances
+*.egg-info/
