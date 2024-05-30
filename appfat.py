@@ -1,23 +1,25 @@
 from flask import Flask, request, jsonify
 import requests
 import os
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis le fichier .env
+load_dotenv()
 
 app = Flask(__name__)
-
 
 @app.route('/')
 def index():
     return "Bienvenue à l'application de notification Flask!"
 
-
-# Whatabot configuration
-WHATABOT_API_KEY = os.getenv('9ab75662-c0e3-4426-bb6e')
+# Configuration Whatabot
+WHATABOT_API_KEY = os.getenv('WHATABOT_API_KEY')
 WHATABOT_API_URL = 'https://app.whatabot.io/api/sendMessage'
 
-# Adafruit IO configuration
-AIO_USERNAME = os.getenv('fatma72001')
+# Configuration Adafruit IO
+AIO_USERNAME = os.getenv('AIO_USERNAME')
 AIO_KEY = os.getenv('ADAFRUIT_IO_KEY')
-AIO_FEED_URL = f'https://io.adafruit.com/api/v2/fatma72001/feeds/lightlumen/data'
+AIO_FEED_URL = f'https://io.adafruit.com/api/v2/{AIO_USERNAME}/feeds/lightlumen/data'
 
 def get_maintenance_state():
     headers = {'X-AIO-Key': AIO_KEY}
