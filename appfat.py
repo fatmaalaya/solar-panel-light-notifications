@@ -14,7 +14,7 @@ def index():
 
 # Configuration Whatabot
 WHATABOT_API_KEY = os.getenv('WHATABOT_API_KEY')
-WHATABOT_API_URL = 'https://app.whatabot.io/api/sendMessage'
+WHATABOT_API_URL = 'https://api.whatabot.io/Whatsapp/RequestSendMessage'
 
 # Configuration Adafruit IO
 AIO_USERNAME = os.getenv('AIO_USERNAME')
