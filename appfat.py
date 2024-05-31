@@ -19,7 +19,7 @@ WHATABOT_API_URL = 'https://api.whatabot.io/Whatsapp/RequestSendMessage'
 # Configuration Adafruit IO
 AIO_USERNAME = os.getenv('AIO_USERNAME')
 AIO_KEY = os.getenv('ADAFRUIT_IO_KEY')
-AIO_FEED_URL = f'https://io.adafruit.com/api/v2/{AIO_USERNAME}/feeds/lightlumen/data'
+AIO_FEED_URL = f'https://io.adafruit.com/api/v2/{AIO_USERNAME}/feeds/maintenance/data'
 
 def get_maintenance_state():
     headers = {'X-AIO-Key': AIO_KEY}
