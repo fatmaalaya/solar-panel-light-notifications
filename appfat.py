@@ -1,56 +1,76 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request
 import requests
-import os
+import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
+import os
 
-# Charger les variables d'environnement depuis le fichier .env
+# Charger les variables d'environnement depuis le fichier .env (utilisé localement)
 load_dotenv()
 
 app = Flask(__name__)
 
-@app.route('/')
-def index():
-    return "Bienvenue à l'application de notification Flask!"
+# MQTT configuration
+MQTT_BROKER = os.getenv('MQTT_BROKER')
+MQTT_PORT = int(os.getenv('MQTT_PORT'))
+MQTT_USERNAME = os.getenv('MQTT_USERNAME')
+MQTT_KEY = os.getenv('MQTT_KEY')
 
-# Configuration Whatabot
-WHATABOT_API_KEY = os.getenv('WHATABOT_API_KEY')
-WHATABOT_API_URL = 'https://api.whatabot.io/Whatsapp/RequestSendMessage'
+# WhatsApp API configuration
+WHATSAPP_API_URL = os.getenv('WHATSAPP_API_URL')
+WHATSAPP_API_TOKEN = os.getenv('WHATSAPP_API_TOKEN')
+USER_PHONE_NUMBER = os.getenv('USER_PHONE_NUMBER')
 
-# Configuration Adafruit IO
-AIO_USERNAME = os.getenv('AIO_USERNAME')
-AIO_KEY = os.getenv('ADAFRUIT_IO_KEY')
-AIO_FEED_URL = f'https://io.adafruit.com/api/v2/{AIO_USERNAME}/feeds/maintenance/data'
+mqtt_client = mqtt.Client()
+mqtt_client.username_pw_set(MQTT_USERNAME, MQTT_KEY)
 
-def get_maintenance_state():
-    headers = {'X-AIO-Key': AIO_KEY}
-    response = requests.get(AIO_FEED_URL, headers=headers)
-    if response.status_code == 200:
-        data = response.json()
-        if data:
-            return data[0]['value'] == '1'
-    return False
-
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    data = request.json
-    if data:
-        lumen_value = data.get('value')
-        if float(lumen_value) < 10:
-            maintenance_state = get_maintenance_state()
-            cause = "ombrage ou accumulation de poussière" if maintenance_state else "problème de maintenance"
-            send_whatsapp_notification(lumen_value, cause)
-        return jsonify({'status': 'success', 'data': data}), 200
-    return jsonify({'status': 'failure'}), 400
-
-def send_whatsapp_notification(lumen_value, cause):
-    message = f"La luminosité a chuté à {lumen_value} lumen. Cause probable : {cause}. Veuillez vérifier les panneaux solaires."
+def send_whatsapp_message(message):
     payload = {
-        'api_key': WHATABOT_API_KEY,
-        'phone': '28375219',
+        'token': WHATSAPP_API_TOKEN,
+        'to': USER_PHONE_NUMBER,
         'message': message
     }
-    response = requests.post(WHATABOT_API_URL, json=payload)
-    return response.json()
+    response = requests.post(WHATSAPP_API_URL, json=payload)
+    if response.status_code == 200:
+        print("Message WhatsApp envoyé avec succès.")
+    else:
+        print(f"Erreur lors de l'envoi du message WhatsApp: {response.status_code} - {response.text}")
+
+def on_connect(client, userdata, flags, rc):
+    print("Connected with result code " + str(rc))
+    client.subscribe(f"{MQTT_USERNAME}/feeds/maintenance")
+
+def on_message(client, userdata, msg):
+    maintenance_state = msg.payload.decode()
+    print(f"Received message '{maintenance_state}' on topic '{msg.topic}'")
+    if msg.topic == f"{MQTT_USERNAME}/feeds/maintenance":
+        if maintenance_state == 'on':
+            send_whatsapp_message('Maintenance status updated: Maintenance has been performed recently.')
+        else:
+            send_whatsapp_message('Maintenance status updated: Maintenance has not been performed recently.')
+
+mqtt_client.on_connect = on_connect
+mqtt_client.on_message = on_message
+
+mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
+mqtt_client.loop_start()
+
+@app.route('/webhook/luminosity', methods=['POST'])
+def handle_luminosity():
+    data = request.json
+    luminosity = float(data['value'])
+    if luminosity < 100:
+        maintenance_state = get_last_maintenance_state()
+        if maintenance_state == 'on':
+            send_whatsapp_message('Luminosity is below 100 lumens. Cause: Shading or dust accumulation.')
+        else:
+            send_whatsapp_message('Luminosity is below 100 lumens. Cause: Maintenance problem.')
+    return '', 200
+
+def get_last_maintenance_state():
+    # Simulating the retrieval of the latest maintenance state
+    # In a real scenario, you would implement a proper way to retrieve the latest state
+    mqtt_client.subscribe(f"{MQTT_USERNAME}/feeds/maintenance")
+    return "on"  # Default value for testing purposes
 
 if __name__ == '__main__':
     app.run(debug=True)
