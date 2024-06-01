@@ -1,16 +1,12 @@
 from flask import Flask, request
 import requests
 import paho.mqtt.client as mqtt
-from dotenv import load_dotenv
 import os
-
-# Charger les variables d'environnement depuis le fichier .env (utilisé localement)
-load_dotenv()
 
 app = Flask(__name__)
 
 # MQTT configuration
-MQTT_BROKER = os.getenv('MQTT_BROKER')
+MQTT_BROKER = 'io.adafruit.com'  # Remplacez par votre broker MQTT
 MQTT_PORT = 1883
 MQTT_USERNAME = os.getenv('MQTT_USERNAME')
 MQTT_KEY = os.getenv('MQTT_KEY')
@@ -51,7 +47,11 @@ def on_message(client, userdata, msg):
 mqtt_client.on_connect = on_connect
 mqtt_client.on_message = on_message
 
-mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
+try:
+    mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
+except ValueError as e:
+    print(f"Error connecting to MQTT Broker: {e}")
+
 mqtt_client.loop_start()
 
 @app.route('/webhook/luminosity', methods=['POST'])
@@ -73,4 +73,5 @@ def get_last_maintenance_state():
     return "on"  # Default value for testing purposes
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))  # Utilisez le port défini par Render, ou 5000 par défaut
+    app.run(host='0.0.0.0', port=port, debug=True)
