@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 # MQTT configuration
 MQTT_BROKER = os.getenv('MQTT_BROKER')
-MQTT_PORT = int(os.getenv('MQTT_PORT'))
+MQTT_PORT = 1883
 MQTT_USERNAME = os.getenv('MQTT_USERNAME')
 MQTT_KEY = os.getenv('MQTT_KEY')
 
