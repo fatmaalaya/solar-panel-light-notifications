@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 
 # MQTT configuration
-MQTT_BROKER = 'io.adafruit.com'  # Remplacez par votre broker MQTT
+MQTT_BROKER = 'io.adafruit.com'
 MQTT_PORT = 1883
 MQTT_USERNAME = os.getenv('MQTT_USERNAME')
 MQTT_KEY = os.getenv('MQTT_KEY')
@@ -54,7 +54,7 @@ except ValueError as e:
 
 mqtt_client.loop_start()
 
-@app.route('/webhook/luminosity', methods=['POST'])
+@app.route('/webhook/luminosité', methods=['POST'])
 def handle_luminosity():
     data = request.json
     luminosity = float(data['value'])
